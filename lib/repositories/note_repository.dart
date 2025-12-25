@@ -1,5 +1,6 @@
 import '../models/note_model.dart';
-import '../services/database_service.dart';
+// Conditional import: use web service on web, SQLite service on desktop
+import '../services/database_service_web.dart' if (dart.library.io) '../services/database_service.dart';
 
 /// Repository Pattern - Tầng trung gian giữa ViewModel và Service
 /// Giúp tách biệt logic truy xuất dữ liệu, giảm coupling

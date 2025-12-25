@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../../viewmodels/note_provider.dart';
 import '../../viewmodels/auth_provider.dart';
 import '../../constants/app_constants.dart';
+import 'note_detail_screen.dart';
+import 'add_edit_note_screen.dart';
 
 /// View - Màn hình chính hiển thị danh sách ghi chú
 class HomeScreen extends StatefulWidget {
@@ -99,7 +101,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () {
-                    // TODO: Navigate to detail screen
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => NoteDetailScreen(note: note),
+                      ),
+                    );
                   },
                 ),
               );
@@ -109,7 +115,11 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // TODO: Navigate to add note screen
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => const AddEditNoteScreen(),
+            ),
+          );
         },
         child: const Icon(Icons.add),
       ),
