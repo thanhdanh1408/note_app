@@ -19,6 +19,8 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+
+    // Load danh sách ghi chú khi Home vừa mở
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<NoteProvider>(context, listen: false).loadNotes();
     });
@@ -45,6 +47,7 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: const Text(AppStrings.homeTitle),
         actions: [
+          // Đăng xuất
           Consumer<AuthProvider>(
             builder: (context, authProvider, child) {
               return IconButton(
@@ -66,12 +69,12 @@ class _HomeScreenState extends State<HomeScreen> {
             return const Center(child: CircularProgressIndicator());
           }
 
-          // Home dùng danh sách đã áp dụng search/tag + filter ngày + sort
+          // Danh sách hiển thị trên Home (đã áp dụng search/tag + lọc ngày + sort)
           final notes = noteProvider.homeNotes;
 
           return Column(
             children: [
-              // Thêm search bar + nút filter (UI đơn giản)
+              // Thanh tìm kiếm + nút mở bộ lọc
               Padding(
                 padding: const EdgeInsets.all(AppDimensions.paddingMedium),
                 child: Row(
@@ -106,6 +109,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
 
+              // Khu vực danh sách ghi chú / empty state
               Expanded(
                 child: notes.isEmpty
                     ? Center(
@@ -212,6 +216,7 @@ class _HomeFilterSheet extends StatefulWidget {
 
 class _HomeFilterSheetState extends State<_HomeFilterSheet> {
   late TextEditingController _tagController;
+
   DateTime? _from;
   DateTime? _to;
   NoteSortOption _sort = NoteSortOption.newest;
@@ -219,6 +224,8 @@ class _HomeFilterSheetState extends State<_HomeFilterSheet> {
   @override
   void initState() {
     super.initState();
+
+    // Lấy trạng thái filter hiện tại để hiển thị lên UI
     final p = Provider.of<NoteProvider>(context, listen: false);
     _tagController = TextEditingController(text: p.selectedTag ?? '');
     _from = p.createdFrom;
@@ -238,131 +245,140 @@ class _HomeFilterSheetState extends State<_HomeFilterSheet> {
   Widget build(BuildContext context) {
     final p = Provider.of<NoteProvider>(context, listen: false);
 
-    // Padding để sheet không sát mép (đỡ “dính edge”)
+    // Padding để sheet không bị dính sát đáy và không sát mép
     return SafeArea(
-      child: SingleChildScrollView(
+      child: Padding(
         padding: EdgeInsets.only(
           left: 16,
           right: 16,
           top: 12,
-          bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+          bottom: MediaQuery.of(context).viewInsets.bottom + 24,
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Bộ lọc & Sắp xếp',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-
-            DropdownButtonFormField<NoteSortOption>(
-              value: _sort,
-              decoration: const InputDecoration(
-                labelText: 'Sắp xếp',
-                prefixIcon: Icon(Icons.sort),
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Bộ lọc & Sắp xếp',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
-              items: const [
-                DropdownMenuItem(
-                  value: NoteSortOption.newest,
-                  child: Text('Newest (mới nhất)'),
-                ),
-                DropdownMenuItem(
-                  value: NoteSortOption.oldest,
-                  child: Text('Oldest (cũ nhất)'),
-                ),
-                DropdownMenuItem(
-                  value: NoteSortOption.titleAZ,
-                  child: Text('Tiêu đề A-Z'),
-                ),
-                DropdownMenuItem(
-                  value: NoteSortOption.titleZA,
-                  child: Text('Tiêu đề Z-A'),
-                ),
-              ],
-              onChanged: (v) {
-                if (v != null) setState(() => _sort = v);
-              },
-            ),
-            const SizedBox(height: 12),
+              const SizedBox(height: 12),
 
-            TextField(
-              controller: _tagController,
-              decoration: const InputDecoration(
-                labelText: 'Category/Tag',
-                hintText: 'Ví dụ: work, personal...',
-                prefixIcon: Icon(Icons.label),
+              // Sort
+              DropdownButtonFormField<NoteSortOption>(
+                value: _sort,
+                decoration: const InputDecoration(
+                  labelText: 'Sắp xếp',
+                  prefixIcon: Icon(Icons.sort),
+                ),
+                items: const [
+                  DropdownMenuItem(
+                    value: NoteSortOption.newest,
+                    child: Text('Newest (mới nhất)'),
+                  ),
+                  DropdownMenuItem(
+                    value: NoteSortOption.oldest,
+                    child: Text('Oldest (cũ nhất)'),
+                  ),
+                  DropdownMenuItem(
+                    value: NoteSortOption.titleAZ,
+                    child: Text('Tiêu đề A-Z'),
+                  ),
+                  DropdownMenuItem(
+                    value: NoteSortOption.titleZA,
+                    child: Text('Tiêu đề Z-A'),
+                  ),
+                ],
+                onChanged: (v) {
+                  if (v != null) setState(() => _sort = v);
+                },
               ),
-            ),
-            const SizedBox(height: 12),
+              const SizedBox(height: 12),
 
-            OutlinedButton.icon(
-              icon: const Icon(Icons.date_range),
-              label: Text(
-                (_from == null && _to == null)
-                    ? 'Chọn khoảng ngày tạo'
-                    : (_from != null && _to != null)
-                        ? '${_fmt(_from!)} → ${_fmt(_to!)}'
-                        : (_from != null)
-                            ? 'Từ ${_fmt(_from!)}'
-                            : 'Đến ${_fmt(_to!)}',
+              // Tag/Category (dùng note.tag)
+              TextField(
+                controller: _tagController,
+                decoration: const InputDecoration(
+                  labelText: 'Category/Tag',
+                  hintText: 'Ví dụ: work, personal...',
+                  prefixIcon: Icon(Icons.label),
+                ),
               ),
-              onPressed: () async {
-                final now = DateTime.now();
-                final picked = await showDateRangePicker(
-                  context: context,
-                  firstDate: DateTime(2000),
-                  lastDate: DateTime(2100),
-                  initialDateRange: (_from != null && _to != null)
-                      ? DateTimeRange(start: _from!, end: _to!)
-                      : DateTimeRange(
-                          start: now.subtract(const Duration(days: 7)),
-                          end: now,
-                        ),
-                );
-                if (picked != null) {
-                  setState(() {
-                    _from = picked.start;
-                    _to = picked.end;
-                  });
-                }
-              },
-            ),
+              const SizedBox(height: 12),
 
-            const SizedBox(height: 16),
+              // Lọc theo ngày tạo (createdAt)
+              OutlinedButton.icon(
+                icon: const Icon(Icons.date_range),
+                label: Text(
+                  (_from == null && _to == null)
+                      ? 'Chọn khoảng ngày tạo'
+                      : (_from != null && _to != null)
+                          ? '${_fmt(_from!)} → ${_fmt(_to!)}'
+                          : (_from != null)
+                              ? 'Từ ${_fmt(_from!)}'
+                              : 'Đến ${_fmt(_to!)}',
+                ),
+                onPressed: () async {
+                  final now = DateTime.now();
+                  final picked = await showDateRangePicker(
+                    context: context,
+                    firstDate: DateTime(2000),
+                    lastDate: DateTime(2100),
+                    initialDateRange: (_from != null && _to != null)
+                        ? DateTimeRange(start: _from!, end: _to!)
+                        : DateTimeRange(
+                            start: now.subtract(const Duration(days: 7)),
+                            end: now,
+                          ),
+                  );
 
-            Row(
-              children: [
-                TextButton(
-                  onPressed: () {
+                  if (picked != null) {
                     setState(() {
-                      _tagController.clear();
-                      _from = null;
-                      _to = null;
-                      _sort = NoteSortOption.newest;
+                      _from = picked.start;
+                      _to = picked.end;
                     });
-                  },
-                  child: const Text('Reset'),
-                ),
-                const Spacer(),
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Hủy'),
-                ),
-                const SizedBox(width: 8),
-                ElevatedButton(
-                  onPressed: () async {
-                    final tag = _tagController.text.trim();
-                    await p.filterByTag(tag.isEmpty ? null : tag);
-                    p.setCreatedDateRange(from: _from, to: _to);
-                    p.setSortOption(_sort);
-                    if (context.mounted) Navigator.pop(context);
-                  },
-                  child: const Text('Áp dụng'),
-                ),
-              ],
-            ),
-          ],
+                  }
+                },
+              ),
+              const SizedBox(height: 16),
+
+              Row(
+                children: [
+                  TextButton(
+                    onPressed: () {
+                      setState(() {
+                        _tagController.clear();
+                        _from = null;
+                        _to = null;
+                        _sort = NoteSortOption.newest;
+                      });
+                    },
+                    child: const Text('Reset'),
+                  ),
+                  const Spacer(),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Hủy'),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    onPressed: () async {
+                      final tag = _tagController.text.trim();
+
+                      await p.filterByTag(tag.isEmpty ? null : tag);
+                      p.setCreatedDateRange(from: _from, to: _to);
+                      p.setSortOption(_sort);
+
+                      if (context.mounted) Navigator.pop(context);
+                    },
+                    child: const Text('Áp dụng'),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
